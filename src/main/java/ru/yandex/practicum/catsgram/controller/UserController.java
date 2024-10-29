@@ -1,77 +1,33 @@
 package ru.yandex.practicum.catsgram.controller;
 
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.catsgram.exception.ConditionsNotMetException;
-import ru.yandex.practicum.catsgram.exception.DuplicatedDataException;
-import ru.yandex.practicum.catsgram.exception.NotFoundException;
-import ru.yandex.practicum.catsgram.model.Post;
 import ru.yandex.practicum.catsgram.model.User;
-
-import java.time.Instant;
+import ru.yandex.practicum.catsgram.service.UserService;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
+    private final UserService userService;
 
-    private final Map<Long, User> users = new HashMap<>();
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public Collection<User> getUsers() {
-        return users.values();
+        return userService.getUsers();
     }
 
     @PostMapping
     public User addUser(@RequestBody User user) {
-        // проверяем выполнение необходимых условий
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            throw new ConditionsNotMetException("Имейл должен быть указан");
-        }
-        if (users.values().stream().anyMatch(existUser -> existUser.getEmail().equals(user.getEmail()))){
-            throw new DuplicatedDataException("Этот имейл уже используется");
-        }
-        // формируем дополнительные данные
-        user.setId(getNextId());
-        user.setRegistrationDate(Instant.now());
-        // сохраняем нового пользователя в памяти приложения
-        users.put(user.getId(), user);
-        return user;
+        return userService.addUser(user);
     }
 
     @PutMapping
     public User update(@RequestBody User newUser) {
-        // проверяем необходимые условия
-        if (newUser.getId() == null) {
-            throw new ConditionsNotMetException("Id должен быть указан");
-        }
-        if (users.containsKey(newUser.getId())) {
-            User oldUser = users.get(newUser.getId());
-            if (users.values().stream().anyMatch(existUser -> existUser.getEmail().equals(newUser.getEmail()))) {
-                throw new DuplicatedDataException("Этот имейл уже используется");
-            }
-            // если пользователь найден и все условия соблюдены, обновляем её содержимое
-            if (newUser.getEmail() != null){
-                oldUser.setEmail(newUser.getEmail());
-            }
-            if (newUser.getUsername() != null){
-                oldUser.setUsername(newUser.getUsername());
-            }
-            if (newUser.getPassword() != null){
-                oldUser.setPassword(newUser.getPassword());
-            }
-            return oldUser;
-        }
-        throw new NotFoundException("Пользователь с id = " + newUser.getId() + " не найден");
+        return userService.update(newUser);
     }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
-    }
+
 }
