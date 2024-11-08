@@ -1,10 +1,13 @@
 package ru.yandex.practicum.catsgram.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.catsgram.exception.PostNotFoundException;
 import ru.yandex.practicum.catsgram.model.Post;
 import ru.yandex.practicum.catsgram.service.PostService;
 
 import java.util.Collection;
+import java.util.Optional;
 
 
 @RestController
@@ -23,6 +26,7 @@ public class PostController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public Post create(@RequestBody Post post) {
         return postService.create(post);
     }
@@ -30,5 +34,13 @@ public class PostController {
     @PutMapping
     public Post update(@RequestBody Post newPost) {
         return postService.update(newPost);
+    }
+
+    @GetMapping("/post/{postId}")
+    public Optional<Post> findPost(@PathVariable("postId") Long postId){
+        if(postService.findPostById(postId).isEmpty()){
+            throw new PostNotFoundException(String.format("Пост № %d не найден", postId));
+        }
+        return postService.findPostById(postId);
     }
 }

@@ -1,23 +1,25 @@
 package ru.yandex.practicum.catsgram.service;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import ru.yandex.practicum.catsgram.exception.ConditionsNotMetException;
 import ru.yandex.practicum.catsgram.exception.NotFoundException;
+import ru.yandex.practicum.catsgram.exception.PostNotFoundException;
 import ru.yandex.practicum.catsgram.model.Post;
 
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class PostService {
     private final Map<Long, Post> posts = new HashMap<>();
+    UserService userService;
 
+    public PostService(UserService userService) {
+        this.userService = userService;
+    }
 
     public Collection<Post> findAll() {
         return posts.values();
@@ -44,6 +46,10 @@ public class PostService {
 
     public Post create(Post post) {
         // проверяем выполнение необходимых условий
+        if (userService.findUserById(post.getAuthorId()).isEmpty()) {
+            throw new ConditionsNotMetException("«Автор с id = " + post.getAuthorId() +" не найден»");
+
+        }
         if (post.getDescription() == null || post.getDescription().isBlank()) {
             throw new ConditionsNotMetException("Описание не может быть пустым");
         }
@@ -53,6 +59,13 @@ public class PostService {
         // сохраняем новую публикацию в памяти приложения
         posts.put(post.getId(), post);
         return post;
+    }
+
+
+    public Optional<Post> findPostById(Long postId) {
+        return posts.values().stream()
+                .filter(p -> p.getId().equals(postId))
+                .findFirst();
     }
 
     // вспомогательный метод для генерации идентификатора нового поста

@@ -1,15 +1,16 @@
 package ru.yandex.practicum.catsgram.service;
 
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.catsgram.exception.ConditionsNotMetException;
-import ru.yandex.practicum.catsgram.exception.DuplicatedDataException;
-import ru.yandex.practicum.catsgram.exception.NotFoundException;
+import ru.yandex.practicum.catsgram.exception.*;
+import ru.yandex.practicum.catsgram.model.Post;
 import ru.yandex.practicum.catsgram.model.User;
 
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+
 @Service
 public class UserService {
     private final Map<Long, User> users = new HashMap<>();
@@ -62,6 +63,13 @@ public class UserService {
         throw new NotFoundException("Пользователь с id = " + newUser.getId() + " не найден");
     }
 
+    public User findUserByEmail(String email) {
+        return users.values().stream()
+                .filter(p -> p.getEmail().equals(email))
+                .findFirst()
+                .orElseThrow(() -> new UserNotFoundException(String.format("Пост № %s не найден", email)));
+    }
+
     private long getNextId() {
         long currentMaxId = users.keySet()
                 .stream()
@@ -70,4 +78,8 @@ public class UserService {
                 .orElse(0);
         return ++currentMaxId;
     }
+    public Optional<User> findUserById(Long id) {
+        return Optional.ofNullable(users.get(id));
+    }
+
 }
